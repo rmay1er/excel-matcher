@@ -3,11 +3,17 @@ import type { ComparisonResult } from "../types/types";
 
 export class Comparator {
   private static cache = new Map<string, number>();
+  private static MAX_CACHE_SIZE = 200000;
 
   static calculateSimilarity(a: string, b: string): number {
     const cacheKey = `${a}|${b}`;
     if (this.cache.has(cacheKey)) {
       return this.cache.get(cacheKey)!;
+    }
+
+    // Ограничиваем размер кеша, если достигнут лимит, очищаем
+    if (this.cache.size >= this.MAX_CACHE_SIZE) {
+      this.cache.clear();
     }
 
     // Разбиваем на слова и учитываем частичные совпадения

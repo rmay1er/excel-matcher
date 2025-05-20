@@ -6,6 +6,9 @@ import { StringIndexer } from "./src/core/indexer";
 
 async function main() {
   console.clear();
+
+  let lastBatchTime: number | null = null;
+
   try {
     const startTime = Date.now();
     console.log("⏳ Начало выполнения скрипта...");
@@ -22,6 +25,12 @@ async function main() {
     const mapping = await CliPrompts.getColumnMapping();
     const targetTable = await CliPrompts.getTargetTable();
     console.timeEnd("🕒 Время получения входных данных");
+
+    console.log(`📄 Первый файл: ${firstFile}`);
+    console.log(`📄 Второй файл: ${secondFile}`);
+    console.log(`🔤 Колонки для сравнения: ${mapping.sourceColumn} -> ${mapping.targetColumn}`);
+    console.log(`🎯 Порог схожести: ${mapping.threshold}`);
+    console.log(`📊 Результаты сохраняем в: ${targetTable === 'первая' ? 'Первый файл' : 'Второй файл'}`);
 
     // Чтение данных
     console.time("🕒 Время чтения данных");
@@ -64,7 +73,14 @@ async function main() {
       );
       results.push(...batchResults);
 
-      console.log(`Обработано строк: ${Math.min(i + batchSize, firstData.length)} из ${firstData.length}`);
+      const batchEnd = Math.min(i + batchSize, firstData.length);
+      const now = Date.now();
+      if (!lastBatchTime) lastBatchTime = now;
+      const elapsed = (now - lastBatchTime) / 1000;
+      lastBatchTime = now;
+
+      console.log(`Обработано строк: ${batchEnd} из ${firstData.length} (время обработки партии: ${elapsed.toFixed(2)} сек)`);
+      console.log(`Кеш Comparator.size: ${Comparator['cache'].size}`);
     }
     console.timeEnd("🕒 Время сравнения данных");
 
@@ -77,7 +93,7 @@ async function main() {
     const endTime = Date.now();
     const totalTime = (endTime - startTime) / 1000;
     console.log(
-      `✅ Файлы прошли сравнение! Общее время выполнения: ${totalTime} секунд`,
+      `✅ Файлы прошли сравнение! Общее время выполнения: ${totalTime.toFixed(2)} секунд`,
     );
   } catch (error) {
     console.error("❌ Error:", error instanceof Error ? error.message : error);
