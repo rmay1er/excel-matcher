@@ -6,7 +6,9 @@
   "private": true,
   "scripts": {
     "dev": "bun run index.ts",
-    "compile": "bun build --compile --minify-whitespace --minify-syntax --target bun --outfile dist/excel-matcher ./index.ts"
+    "compile": "bun build --compile --minify-whitespace --minify-syntax --target bun --outfile dist/excel-matcher ./index.ts",
+    "build": "bun build --minify-whitespace --minify-syntax --target bun --outdir dist ./index.ts",
+    "preview": "bun run dist/index.js"
   },
   "devDependencies": {
     "@types/bun": "latest",

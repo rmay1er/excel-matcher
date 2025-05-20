@@ -36,24 +36,29 @@ async function main() {
 
     // Сравнение данных
     console.time("🕒 Время сравнения данных");
-    const results = firstData.map((sourceValue) => {
-      const candidates = indexer.getCandidates(sourceValue);
-      const bestMatch = candidates.reduce(
-        (best, targetValue) => {
-          const current = Comparator.isMatch(
-            sourceValue,
-            targetValue,
-            mapping.threshold,
-          );
-          console.log(
-            `Сравнение: "${sourceValue}" с "${targetValue}" - схожесть: ${current.similarity}`,
-          );
-          return current.similarity > best.similarity ? current : best;
-        },
-        { similarity: 0, match: false } as ComparisonResult,
-      );
-      return bestMatch;
-    });
+    const batchSize = 100;
+    const results: ComparisonResult[] = [];
+
+    for (let i = 0; i < firstData.length; i += batchSize) {
+      const batch = firstData.slice(i, i + batchSize);
+      batch.forEach((sourceValue, index) => {
+        const candidates = indexer.getCandidates(sourceValue);
+        const bestMatch = candidates.reduce(
+          (best, targetValue) => {
+            const current = Comparator.isMatch(
+              sourceValue,
+              targetValue,
+              mapping.threshold,
+            );
+            return current.similarity > best.similarity ? current : best;
+          },
+          { similarity: 0, match: false } as ComparisonResult,
+        );
+        results.push(bestMatch);
+      });
+
+      console.log(`Обработано строк: ${Math.min(i + batchSize, firstData.length)} из ${firstData.length}`);
+    }
     console.timeEnd("🕒 Время сравнения данных");
 
     // Сохранение результатов
