@@ -41,21 +41,28 @@ async function main() {
 
     for (let i = 0; i < firstData.length; i += batchSize) {
       const batch = firstData.slice(i, i + batchSize);
-      batch.forEach((sourceValue, index) => {
-        const candidates = indexer.getCandidates(sourceValue);
-        const bestMatch = candidates.reduce(
-          (best, targetValue) => {
+      // Параллельная обработка батча
+      const batchResults = await Promise.all(
+        batch.map(async (sourceValue) => {
+          const candidates = indexer.getCandidates(sourceValue);
+          let bestMatch: ComparisonResult = { similarity: 0, match: false };
+          for (const targetValue of candidates) {
+            if (!Comparator.preFilter(sourceValue, targetValue, mapping.threshold)) {
+              continue;
+            }
             const current = Comparator.isMatch(
               sourceValue,
               targetValue,
               mapping.threshold,
             );
-            return current.similarity > best.similarity ? current : best;
-          },
-          { similarity: 0, match: false } as ComparisonResult,
-        );
-        results.push(bestMatch);
-      });
+            if (current.similarity > bestMatch.similarity) {
+              bestMatch = current;
+            }
+          }
+          return bestMatch;
+        }),
+      );
+      results.push(...batchResults);
 
       console.log(`Обработано строк: ${Math.min(i + batchSize, firstData.length)} из ${firstData.length}`);
     }

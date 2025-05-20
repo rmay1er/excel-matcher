@@ -41,9 +41,25 @@ export class Comparator {
     // Если есть хотя бы одно общее слово - пропускаем
     if (commonWords.length > 0) return true;
 
+    // Проверяем длину общего префикса для ускоренной фильтрации
+    const minLen = Math.min(a.length, b.length);
+    if (minLen === 0) return false;
+
+    let commonPrefixLength = 0;
+    for (let i = 0; i < minLen; i++) {
+      if (a[i] === b[i]) {
+        commonPrefixLength++;
+      } else {
+        break;
+      }
+    }
+
+    if (commonPrefixLength / minLen < threshold * 0.5) {
+      return false;
+    }
+
     // Остальная логика проверки
     const maxLen = Math.max(a.length, b.length);
-    const minLen = Math.min(a.length, b.length);
     return minLen / maxLen >= threshold * 0.8;
   }
 
